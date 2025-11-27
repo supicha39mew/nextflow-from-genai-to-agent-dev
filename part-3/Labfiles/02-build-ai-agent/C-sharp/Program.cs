@@ -151,7 +151,7 @@ class Program
 
 
         // Clean up
-        await agentClient.Threads.DeleteThreadAsync(thread.Value.Id);
+        // await agentClient.Threads.DeleteThreadAsync(thread.Value.Id);
         await agentClient.Administration.DeleteAgentAsync(agent.Value.Id);
 
 

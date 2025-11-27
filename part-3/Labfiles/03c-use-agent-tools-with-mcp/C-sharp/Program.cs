@@ -17,14 +17,28 @@ var mcpServerUrl = "https://learn.microsoft.com/api/mcp";
 var mcpServerLabel = "mslearn";
 
 // Connect to the agents client
+PersistentAgentsClient agentsClient = new(projectEndpoint, new DefaultAzureCredential());
 
 // Create MCP tool definition
-
+MCPToolDefinition mcpTool = new(mcpServerLabel, mcpServerUrl);
 
 // Create agent with MCP tool
+PersistentAgent agent = await agentsClient.Administration.CreateAgentAsync(
+    model: modelDeploymentName,
+    name: "my-mcp-agent",
+    instructions: """
+        You have access to an MCP server called `microsoft.docs.mcp` - this tool allows you to 
+        search through Microsoft's latest official documentation. Use the available MCP tools 
+        to answer questions and perform tasks.
+        """,
+    tools: [mcpTool]);
 
+Console.WriteLine($"Created agent, ID: {agent.Id}");
+Console.WriteLine($"MCP Server: {mcpServerLabel} at {mcpServerUrl}");
 
 // Create thread for communication
+PersistentAgentThread thread = await agentsClient.Threads.CreateThreadAsync();
+Console.WriteLine($"Created thread, ID: {thread.Id}");
 
 
 // Get user prompt
@@ -32,12 +46,20 @@ Console.Write("\nHow can I help?: ");
 var prompt = Console.ReadLine() ?? "Give me the Azure CLI commands to create an Azure Container App with a managed identity.";
 
 // Create message to thread
+PersistentThreadMessage message = await agentsClient.Messages.CreateMessageAsync(
+    thread.Id,
+    MessageRole.User,
+    prompt);
+Console.WriteLine($"Created message, ID: {message.Id}");
 
 
 // Create MCP tool resource (no approval required - "never" mode)
-
+MCPToolResource mcpToolResource = new(mcpServerLabel);
+ToolResources toolResources = mcpToolResource.ToToolResources();
 
 // Create and process agent run in thread with MCP tools
+ThreadRun run = agentsClient.Runs.CreateRun(thread, agent, toolResources);
+Console.WriteLine($"Created run, ID: {run.Id}");
 
 
 // Handle run execution and tool approvals
